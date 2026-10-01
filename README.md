@@ -1,163 +1,145 @@
 # ClientFlow
 
-ClientFlow is a multi-tenant workspace for a studio and its clients. The studio runs projects, uploads deliverable versions, and sends invoices. The client reviews a version, approves it, or sends it back. A person in one studio cannot open another studio's project.
+ClientFlow is a multi-tenant workspace for a studio and its clients. The agency keeps projects, deliverables, approvals, and invoices in one place. A client signs in and reviews the work that belongs to them.
 
-There is no hosted demo. Run it locally. With no database URL, the API keeps a MongoDB data directory in `backend/data` and loads Northline Studio the first time that directory is empty.
+You can use it for a real small studio, and you can walk the seeded Northline Studio when you want to show the product. `npm run db:reset` wipes the local database and restores that demo. Do not run it if you want to keep organizations you created yourself.
 
-## Screenshots
-
-Homepage Design v2 is waiting for a decision. Version 1 already has the client's change request.
-
-![Homepage Design review](docs/homepage-review.png)
-
-Invoice #1024 totals ₹82,600 after 18% GST.
-
-![Invoice 1024](docs/invoice-1024.png)
+There is no hosted demo. Run it locally.
 
 ## Stack
 
 | Layer | What it uses |
 | --- | --- |
-| Web | React, Vite, React Router, Tailwind |
-| API | Node.js, Express |
-| Data | MongoDB, Mongoose |
-| Auth | JWT, bcrypt |
-| Files | Multer, stored on disk for local development |
-| Jobs | A timer in the API process that marks overdue invoices |
+| App | Next.js App Router, React, Tailwind |
+| Data | SQLite through Prisma, so a clone runs without a database server |
+| Auth | Password hash with bcrypt, session in an httpOnly cookie signed with jose |
+| Files | Local `storage/` directory behind an authenticated route |
+| Jobs | A worker function. The request that creates an invoice does not send email |
 
-The browser talks to Express through the Vite proxy in development. In production the API can serve the built React app from the same process.
+SQLite is the local default. The schema uses plain strings and integer money (paise) so the same models can move to Postgres. Uploaded files sit on disk for development. A host with an ephemeral disk, including Render, should replace `src/server/storage.ts` with object storage.
 
 ## Roles
 
-Registration creates an owner and a new organization. Invites can add the other roles. The role lives on the membership, not on the user, because the same person could belong to more than one studio.
+Public registration creates an owner and a new organization on the Free plan. It does not let someone pick another role. Staff and client portal accounts are created from inside a workspace.
 
 | Role | What they can do |
 | --- | --- |
-| Owner | Everything, including changing the plan |
-| Admin | Everything except changing the plan |
-| Manager | Clients, projects, tasks, deliverables, invoices, team invites |
-| Employee | Projects they are a member of. They can move a task's status and upload a deliverable. They cannot create projects or invoices |
-| Client | Their own client's projects, deliverable decisions, and invoices that have been sent |
+| Owner | Everything in the workspace, including plan changes |
+| Admin | Run the workspace and the reminder job. Cannot change the plan |
+| Manager | Clients, projects, tasks, deliverables, and invoices. Cannot run jobs or change the plan |
+| Employee | View projects, move tasks, upload deliverable versions, comment |
+| Client | View their own projects, approve or request changes, comment, view their invoices |
 
-A permission is `resource:action`, for example `deliverable:approve` or `invoice:create`. Routes call `authorize` with the permission. The UI hides buttons from the same list, and the API still rejects a direct call.
+Permissions are `resource:action`, for example `project:create`, `deliverable:approve`, `invoice:collect`. Owner is the only role with `*`. Admin does not pass a check for `billing:manage`.
 
 ## Tenancy
 
-Every project, client, task, deliverable, invoice, and activity row stores `organization`. The request must send `X-Organization-Id`. The middleware loads the membership for that user and that organization. A missing membership is 403.
+A session points at one membership. Every request reloads that membership, so a removed person loses access on the next request.
 
-Project reads also apply a visibility filter:
+Project queries go through `projectWhere`:
 
-- Owner, admin, and manager see every project in the studio.
-- An employee sees projects whose member list includes them.
-- A client sees projects for the client record linked to their membership.
+- The organization id comes from the membership, not from the form.
+- A client membership also requires the client id stored on that membership.
+- A client with no client id matches nothing.
 
-A project outside that filter is 404. The response does not say whether the id exists in another studio. Creating a project with another studio's client id is also 404, because the client lookup is scoped to the caller's organization.
+Knowing another organization's project id returns 404. `npm run check:tenant` reads the seeded database and checks that Northline cannot load a Harbor project, and that ABC's client cannot see Kite & Co.
 
-## Plans and quotas
+Invoice lines do not accept a client id from the browser. The server loads the project inside the caller's organization and bills that project's client. Totals are computed on the server.
 
-| | Free | Pro ₹499/mo | Business ₹1,499/mo |
+## Deliverable versions
+
+A deliverable starts at v1 with status `PENDING`.
+
+- `PENDING` can become `APPROVED` or `CHANGES_REQUESTED`
+- `CHANGES_REQUESTED` cannot become `APPROVED`
+- The next file is a new version, and only after changes were requested
+- Only the latest version can be reviewed
+
+Logo Design in the seed is v1 changes requested, v2 changes requested, v3 approved. Homepage Design v2 is waiting on Priya.
+
+## Invoices
+
+Money is stored in paise. The seeded invoice INV-1024 is Website Development ₹50,000 plus SEO ₹20,000, GST 18%, total ₹82,600. That arithmetic is covered by `npm test`.
+
+States:
+
+- Draft → Sent or Cancelled
+- Sent → Viewed, Paid, Overdue, or Cancelled
+- Viewed → Paid, Overdue, or Cancelled
+- Overdue → Paid or Cancelled
+- Paid and Cancelled stop
+
+A client opening a sent invoice moves it to Viewed. The agency opening it does not.
+
+## Plans and limits
+
+| Feature | Free | Pro | Business |
 | --- | --- | --- | --- |
 | Projects | 2 | 20 | Unlimited |
 | Clients | 5 | 50 | Unlimited |
 | Team members | 2 | 10 | 50 |
 | Storage | 500 MB | 10 GB | 100 GB |
 | Invoices | Yes | Yes | Yes |
-| Analytics charts | No | Yes | Yes |
+| Analytics | No | Yes | Yes |
 | Custom branding | No | No | Yes |
 
-Team members are staff memberships. A client portal login does not consume a seat. Completed projects still count toward the project quota.
+Creating a record checks `used < limit`. Harbor & Co is on Free with 2 projects, so a third project is refused, and the existing two are still allowed. A downgrade is refused when current usage does not fit the smaller plan.
 
-Before a create, the API counts current usage. At 20 of 20 projects the next create is 402. Operational counts on the overview stay available on Free. Charts require Pro or Business.
+Analytics charts render only when the role may view them and the plan includes them. A brand color is stored only when Business is active; it is not applied on a lower plan.
 
-Plan changes on the Plan page are a sandbox. They update `organization.plan` immediately and do not charge a card. A downgrade is rejected when current usage is already over the smaller limit. Wire a payment provider before charging anyone.
+Plan changes are recorded on the organization. Nothing here charges a card. A payment provider would call the same plan change after a successful payment.
 
-## Deliverable versions
+## Worker
 
-A deliverable has versions. The latest version is the one a client can decide.
+Creating work writes an in-app notification immediately and, when an email is needed, a row in the outbox with status `PENDING`. Nothing in that request sends mail.
 
-- The first upload creates version 1 in `PENDING_REVIEW`.
-- Approve and request-changes are legal only from `PENDING_REVIEW`. A second decision on the same version is 409.
-- Requesting changes requires a comment.
-- The next file is legal only after `CHANGES_REQUESTED` or `APPROVED`. Uploading while a review is open is 409.
-- The new version starts again at `PENDING_REVIEW`.
+`runWorker` does two things for one organization, or for every organization when the cron route calls it:
 
-Each version stores the version number, who uploaded it, when, the change note, the file, and the status.
+1. Sent or viewed invoices past their due date become overdue. The actor on that activity row is empty, so the log shows ClientFlow rather than a person.
+2. Pending outbox rows for that organization are marked sent.
 
-## Invoices
+Northline's settings page shows that organization's job log and outbox only. INV-1024 is sent and already past due, so the first run of the reminder job is the thing that marks it overdue. There is also one unsent assignment email waiting in the outbox.
 
-Amounts are whole rupees. Tax is rounded to the nearest rupee. Website Development ₹50,000 plus SEO ₹20,000 at 18% GST is ₹12,600 tax and ₹82,600 total. The server computes that. The client does not send the total.
-
-| From | Allowed next states |
-| --- | --- |
-| Draft | Sent, Cancelled |
-| Sent | Viewed, Paid, Overdue, Cancelled |
-| Viewed | Paid, Overdue, Cancelled |
-| Overdue | Paid, Cancelled |
-| Paid | none |
-| Cancelled | none |
-
-Draft to Paid is 409. A client opening a sent invoice moves it to Viewed. Clients do not receive drafts. About once a minute the API marks Sent or Viewed invoices past their due date as Overdue, writes an activity row, and notifies owners, admins, and managers. That function is the thing a queue worker would call if the app ran as more than one process.
+The button runs the worker for the signed-in organization. A scheduler can POST `/api/jobs/overdue` with `Authorization: Bearer $CRON_SECRET`.
 
 ## Activity
 
-An activity row stores the actor, action, resource, resource id, optional project, timestamp, and metadata. The feed reads, for example, "Priya Shah requested changes on Homepage Design v1". Clients and employees only see events for projects they can already open.
-
-## Demo
-
-Password for every demo account: `demo1234`
-
-| Email | Studio | Role |
-| --- | --- | --- |
-| owner@northline.studio | Northline Studio | Owner, Pro plan |
-| rahul@northline.studio | Northline Studio | Manager |
-| ananya@northline.studio | Northline Studio | Employee |
-| priya@abcpvt.com | Northline Studio | Client of ABC Pvt Ltd |
-| meera@harbor.co | Harbor & Co | Owner of a different studio |
-
-Northline's website project has Homepage Design v1 (changes requested) and v2 (pending review), an approved logo, a task board, and invoice #1024 for ₹82,600. Sign in as Priya to approve v2. Sign in as Meera and the Northline project id will not load.
+Each entry stores actor, action, resource, resource id, timestamp, optional metadata, and a sentence for the screen. System events, such as an invoice becoming overdue, have no actor.
 
 ## How to run it locally
 
-Use Node.js 20 or newer.
+Use Node.js 20 or newer. Do not commit `.env`.
 
 ```bash
+cp .env.example .env
 npm install
 npm run setup
 npm run dev
 ```
 
-Open http://localhost:5173. The API listens on port 4000.
-
-`npm run dev` stores data in `backend/data` when `MONGODB_URI` is unset. The demo is loaded only when that database has no users. Stopping the API does not wipe it. Delete `backend/data` to start over.
-
-To use your own MongoDB instead:
-
-```bash
-docker compose up -d
-cp backend/.env.example backend/.env
-npm run seed --prefix backend
-```
-
-Set `JWT_SECRET` in that file before you share the machine. Do not commit `.env`.
+`npm run setup` creates the SQLite file and loads the demo.
 
 ```bash
 npm test
-npm run build
+npm run check:tenant
 ```
 
-`npm test` covers the GST total, the quota check, the permission matrix, illegal invoice and deliverable transitions, and a request from studio B for studio A's project.
+Open http://localhost:3000 and sign in.
 
-`npm start` with `NODE_ENV=production`, `MONGODB_URI`, and `JWT_SECRET` serves the API and, if `frontend/dist` exists, the built web app, on `0.0.0.0:$PORT`.
+| Email | Workspace | Role |
+| --- | --- | --- |
+| rohit@northline.studio | Northline Studio | Owner |
+| rahul@northline.studio | Northline Studio | Manager |
+| meera@northline.studio | Northline Studio | Employee |
+| priya@abcpvt.com | Northline Studio | Client for ABC Pvt Ltd |
+| anika@harbor.co | Harbor & Co | Owner, on the free project limit |
 
-## Layout
+Password for every seeded account: `clientflow`
 
-```
-backend/src/domain        permissions, plan limits, invoice and deliverable rules
-backend/src/middleware    JWT, organization membership, permission checks
-backend/src/routes        HTTP
-backend/src/services      quotas, activity, notifications, overview, PDF
-backend/src/jobs          overdue invoices
-frontend/src              React app
-```
+Registering from the home page creates a separate organization. It does not join Northline.
 
-The domain modules do not import Mongoose. Routes do not trust a role or an organization id from the JSON body.
+## What is intentionally local
+
+- Email is an outbox the worker marks sent. Swap the outbox update for a real mailer later.
+- Files are on local disk.
+- Plans are enforced, not billed.
