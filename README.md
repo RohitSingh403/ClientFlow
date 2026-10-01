@@ -2,7 +2,17 @@
 
 ClientFlow is a multi-tenant workspace for a studio and its clients. The studio runs projects, uploads deliverable versions, and sends invoices. The client reviews a version, approves it, or sends it back. A person in one studio cannot open another studio's project.
 
-There is no hosted demo. Run it locally. With no database URL, the API boots an in-memory MongoDB and loads Northline Studio.
+There is no hosted demo. Run it locally. With no database URL, the API keeps a MongoDB data directory in `backend/data` and loads Northline Studio the first time that directory is empty.
+
+## Screenshots
+
+Homepage Design v2 is waiting for a decision. Version 1 already has the client's change request.
+
+![Homepage Design review](docs/homepage-review.png)
+
+Invoice #1024 totals ₹82,600 after 18% GST.
+
+![Invoice 1024](docs/invoice-1024.png)
 
 ## Stack
 
@@ -118,9 +128,9 @@ npm run dev
 
 Open http://localhost:5173. The API listens on port 4000.
 
-`npm run dev` uses an in-memory database when `MONGODB_URI` is unset, and loads the demo on boot. Data disappears when the API stops.
+`npm run dev` stores data in `backend/data` when `MONGODB_URI` is unset. The demo is loaded only when that database has no users. Stopping the API does not wipe it. Delete `backend/data` to start over.
 
-For a database that keeps data, start MongoDB and point the API at it:
+To use your own MongoDB instead:
 
 ```bash
 docker compose up -d
