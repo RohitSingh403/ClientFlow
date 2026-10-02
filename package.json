@@ -4,16 +4,37 @@
   "version": "1.0.0",
   "description": "Multi-tenant workspace for agency projects, client approvals, and invoices.",
   "scripts": {
-    "setup": "npm install --prefix backend && npm install --prefix frontend",
-    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "test": "npm test --prefix backend",
-    "build": "npm run build --prefix frontend",
-    "start": "npm start --prefix backend"
+    "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
+    "db:reset": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts",
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "test": "node --experimental-strip-types --test tests/domain.test.ts",
+    "check:tenant": "tsx scripts/check-tenant.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.12",
+    "next": "^15.5.27",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "5.9"
   }
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RegisterForm } from "@/components/auth-forms";
-import { AuthFrame } from "@/app/login/page";
+import { AuthFrame } from "@/components/auth-frame";
 
 export const metadata = { title: "Create workspace" };
 
