@@ -21,7 +21,6 @@ What is built:
 
 What a public demo still needs:
 
-- Object storage instead of the local `storage/` directory.
 - A mailer in place of the outbox update.
 - A scheduler that POSTs `/api/jobs/overdue` with `Authorization: Bearer $CRON_SECRET`.
 - A payment provider in front of the same plan change the settings page already records.
@@ -35,10 +34,10 @@ Walking the demo changes the database. Priya can approve Homepage Design v2, and
 | App | Next.js App Router, React, Tailwind |
 | Data | Postgres through Prisma |
 | Auth | Password hash with bcrypt, session in an httpOnly cookie signed with jose |
-| Files | Local `storage/` directory behind an authenticated route |
+| Files | S3-compatible storage when `S3_BUCKET` is set, otherwise a local `storage/` directory |
 | Jobs | A worker function. The request that creates an invoice does not send email |
 
-`DATABASE_URL` is a Postgres connection string. On your laptop, use the external URL from the database host. On Render, use the internal URL. Uploaded files sit on disk for development. A host with an ephemeral disk, including Render, should replace `src/server/storage.ts` with object storage.
+`DATABASE_URL` is a Postgres connection string. On your laptop, use the external URL from the database host. On Render, use the internal URL. Uploads stay on local disk until `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `S3_ENDPOINT` are set. Those four send files to S3-compatible storage, including Cloudflare R2.
 
 ## Roles
 
