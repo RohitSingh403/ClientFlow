@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { db } from "../src/lib/db";
 import { invoiceTotals, rupeesToPaise } from "../src/lib/money";
+import { saveObject } from "../src/server/storage";
 
 function days(offset: number) {
   return new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
@@ -19,15 +20,13 @@ function previewSvg(label: string, color: string) {
 
 async function writePreview(organizationId: string, label: string, color: string) {
   const id = randomUUID();
-  const body = previewSvg(label, color);
+  const body = Buffer.from(previewSvg(label, color));
   const storageKey = `${organizationId}/${id}.svg`;
-  const full = path.join(process.cwd(), "storage", storageKey);
-  await fs.mkdir(path.dirname(full), { recursive: true });
-  await fs.writeFile(full, body);
+  await saveObject(storageKey, body);
   return {
     id,
     storageKey,
-    byteSize: Buffer.byteLength(body),
+    byteSize: body.byteLength,
     fileName: `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.svg`,
   };
 }
