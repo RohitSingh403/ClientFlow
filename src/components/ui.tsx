@@ -21,7 +21,7 @@ export function PageHeader({
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-        <h1 className="font-serif text-3xl leading-tight">{title}</h1>
+        <h1 className="font-serif text-3xl leading-tight tracking-tight md:text-4xl">{title}</h1>
       </div>
       {children}
     </div>
