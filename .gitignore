@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.next/
+*.tsbuildinfo
 .env
 .env.local
 *.log
@@ -9,3 +11,6 @@ backend/uploads/*
 backend/data/
 coverage/
 .mongodb-binaries/
+storage/
+prisma/dev.db
+prisma/dev.db-journal

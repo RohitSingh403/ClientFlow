@@ -385,7 +385,7 @@ async function main() {
   const supportTotals = invoiceTotals([rupeesToPaise("15000")!], 0);
   const harborTotals = invoiceTotals([rupeesToPaise("8000")!], 0);
 
-  await db.invoice.create({
+  const invoice1024 = await db.invoice.create({
     data: {
       organizationId: northline.id,
       projectId: website.id,
@@ -531,7 +531,7 @@ async function main() {
         actorId: rohit.id,
         action: "invoice.created",
         resource: "invoice",
-        resourceId: "seed-1024",
+        resourceId: invoice1024.id,
         summary: "Rohit created invoice INV-1024",
         createdAt: days(-3),
       },
