@@ -52,7 +52,7 @@ export default async function DashboardPage() {
     <div>
       <PageHeader eyebrow="Workspace" title={projects.length === 0 ? "Start with a client" : "Overview"} />
       {pastDue > 0 ? (
-        <section className="card mb-6 flex flex-wrap items-center justify-between gap-4 border-bad/30">
+        <section className="notice card mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="font-medium">
               {pastDue} invoice{pastDue === 1 ? "" : "s"} past due, still marked sent or viewed.
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
           </div>
         </section>
       ) : (
-        <section className="grid gap-3 md:grid-cols-3">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Stat label="Active projects" value={String(projects.filter((project) => project.status === "ACTIVE").length)} />
           <Stat label="Pending approvals" value={String(pending.length)} />
           <Stat label="Overdue tasks" value={String(overdueTasks.length)} />
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
           <h2 className="mb-3 font-serif text-2xl">Projects</h2>
           <div className="grid gap-2">
             {projects.slice(0, 5).map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="card flex items-center justify-between gap-3">
+              <Link key={project.id} href={`/projects/${project.id}`} className="card row-link flex items-center justify-between gap-3">
                 <span>
                   <span className="block font-medium">{project.name}</span>
                   <span className="text-sm text-muted">{project.client.company}</span>
@@ -159,7 +159,7 @@ async function ClientHome() {
       <section className="grid gap-3">
         {pending.length === 0 ? <p className="text-muted">Nothing is waiting for review.</p> : null}
         {pending.map((item) => (
-          <Link key={item.id} href={`/projects/${item.projectId}#${item.id}`} className="card flex items-center justify-between">
+          <Link key={item.id} href={`/projects/${item.projectId}#${item.id}`} className="card row-link flex items-center justify-between">
             <span>
               <span className="block font-medium">{item.title}</span>
               <span className="text-sm text-muted">{item.project.name}</span>
@@ -171,7 +171,7 @@ async function ClientHome() {
       <h2 className="mb-3 mt-8 font-serif text-2xl">Projects</h2>
       <div className="grid gap-2">
         {projects.map((project) => (
-          <Link key={project.id} href={`/projects/${project.id}`} className="card flex justify-between">
+          <Link key={project.id} href={`/projects/${project.id}`} className="card row-link flex justify-between">
             <span>{project.name}</span>
             <StatusPill status={project.status} />
           </Link>
@@ -180,7 +180,7 @@ async function ClientHome() {
       <h2 className="mb-3 mt-8 font-serif text-2xl">Invoices</h2>
       <div className="grid gap-2">
         {invoices.map((invoice) => (
-          <Link key={invoice.id} href={`/invoices/${invoice.id}`} className="card flex justify-between">
+          <Link key={invoice.id} href={`/invoices/${invoice.id}`} className="card row-link flex justify-between">
             <span>
               {invoice.number} · {formatINR(invoice.total)}
             </span>
@@ -194,9 +194,9 @@ async function ClientHome() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <article className="card">
+    <article className="stat-card card">
       <p className="text-sm text-muted">{label}</p>
-      <p className="stat mt-2">{value}</p>
+      <p className="stat mt-3">{value}</p>
     </article>
   );
 }
