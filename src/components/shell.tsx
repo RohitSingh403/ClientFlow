@@ -75,6 +75,11 @@ export function Shell({
               <Link href="/notifications" className="btn btn-ghost">
                 Notifications{unread > 0 ? ` (${unread})` : ""}
               </Link>
+              <form action={logout}>
+                <button className="btn btn-ghost" type="submit">
+                  Sign out
+                </button>
+              </form>
             </div>
           </div>
           <div className="mt-3 md:hidden">
