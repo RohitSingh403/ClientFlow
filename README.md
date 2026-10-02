@@ -21,7 +21,6 @@ What is built:
 
 What a public demo still needs:
 
-- Postgres instead of the local SQLite file. A host with an ephemeral disk cannot keep `prisma/dev.db`.
 - Object storage instead of the local `storage/` directory.
 - A mailer in place of the outbox update.
 - A scheduler that POSTs `/api/jobs/overdue` with `Authorization: Bearer $CRON_SECRET`.
@@ -34,12 +33,12 @@ Walking the demo changes the database. Priya can approve Homepage Design v2, and
 | Layer | What it uses |
 | --- | --- |
 | App | Next.js App Router, React, Tailwind |
-| Data | SQLite through Prisma, so a clone runs without a database server |
+| Data | Postgres through Prisma |
 | Auth | Password hash with bcrypt, session in an httpOnly cookie signed with jose |
 | Files | Local `storage/` directory behind an authenticated route |
 | Jobs | A worker function. The request that creates an invoice does not send email |
 
-SQLite is the local default. The schema uses plain strings and integer money (paise) so the same models can move to Postgres. Uploaded files sit on disk for development. A host with an ephemeral disk, including Render, should replace `src/server/storage.ts` with object storage.
+`DATABASE_URL` is a Postgres connection string. On your laptop, use the external URL from the database host. On Render, use the internal URL. Uploaded files sit on disk for development. A host with an ephemeral disk, including Render, should replace `src/server/storage.ts` with object storage.
 
 ## Roles
 
@@ -140,7 +139,7 @@ npm run setup
 npm run dev
 ```
 
-`npm run setup` creates the SQLite file and loads the demo.
+`npm run setup` creates the tables in Postgres and loads the demo when the database is empty.
 
 ```bash
 npm test

@@ -54,6 +54,11 @@ async function wipe() {
 }
 
 async function main() {
+  const existingUsers = await db.user.count();
+  if (existingUsers > 0) {
+    console.log("Database already has users. Leaving it in place.");
+    return;
+  }
   await wipe();
   const passwordHash = await bcrypt.hash("clientflow", 10);
 
