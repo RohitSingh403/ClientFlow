@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
 
@@ -13,7 +14,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} h-full`}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <Suspense fallback={<p className="px-6 py-10 text-sm text-muted">Loading ClientFlow…</p>}>{children}</Suspense>
+      </body>
     </html>
   );
 }

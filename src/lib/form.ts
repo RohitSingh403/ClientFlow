@@ -15,5 +15,8 @@ export function safeNextPath(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
     return "/dashboard";
   }
+  if (value === "/login" || value.startsWith("/login?") || value === "/register" || value.startsWith("/register?")) {
+    return "/dashboard";
+  }
   return value;
 }
