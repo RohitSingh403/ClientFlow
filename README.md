@@ -6,6 +6,29 @@ You can use it for a real small studio, and you can walk the seeded Northline St
 
 There is no hosted demo. Run it locally.
 
+## Where it stands
+
+`npm run dev` starts the Next.js app in this repository, at http://localhost:3000. `backend/` and `frontend/` are an earlier MERN copy. They are not the app that command starts.
+
+What is built:
+
+- A marketing page and the signed-in workspace: overview, projects, deliverables, approvals, clients, invoices, activity, team, plan and usage, and inbox.
+- Organizations, five roles, and a tenant check. The seed loads Northline Studio (Pro) and Harbor & Co (Free, already at the two-project limit).
+- Deliverable versions and invoice states. INV-1024 is Website Development ₹50,000 plus SEO ₹20,000, GST 18%, total ₹82,600.
+- Plan limits on projects, clients, seats, storage, analytics, and brand color. Changing a plan writes the new plan. It does not charge a card.
+- In-app notifications. Mail is an outbox row. The worker marks those rows sent and does not send them.
+- Sessions in an httpOnly `cf_session` cookie. A cookie that does not verify is deleted, so sign-in and the dashboard do not redirect to each other.
+
+What a public demo still needs:
+
+- Postgres instead of the local SQLite file. A host with an ephemeral disk cannot keep `prisma/dev.db`.
+- Object storage instead of the local `storage/` directory.
+- A mailer in place of the outbox update.
+- A scheduler that POSTs `/api/jobs/overdue` with `Authorization: Bearer $CRON_SECRET`.
+- A payment provider in front of the same plan change the settings page already records.
+
+Walking the demo changes the database. Priya can approve Homepage Design v2, and the reminder job can mark INV-1024 overdue. `npm run db:reset` puts the seed back, including Homepage Design v2 still waiting on Priya.
+
 ## Stack
 
 | Layer | What it uses |
@@ -140,6 +163,9 @@ Registering from the home page creates a separate organization. It does not join
 
 ## What is intentionally local
 
+These are the same gaps listed above. They are left local on purpose until there is a host.
+
 - Email is an outbox the worker marks sent. Swap the outbox update for a real mailer later.
 - Files are on local disk.
 - Plans are enforced, not billed.
+- The overdue job runs from the settings button, or from a bearer request. Nothing calls it on a clock.
