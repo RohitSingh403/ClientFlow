@@ -8,7 +8,7 @@ There is no hosted demo. Run it locally.
 
 ## Where it stands
 
-`npm run dev` starts the Next.js app in this repository, at http://localhost:3000. `backend/` and `frontend/` are an earlier MERN copy. They are not the app that command starts.
+`npm run dev` starts the Next.js app in this repository, at http://localhost:3000.
 
 What is built:
 
