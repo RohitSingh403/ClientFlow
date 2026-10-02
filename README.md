@@ -24,7 +24,7 @@ Public registration creates an owner and a new organization on the Free plan. It
 
 | Role | What they can do |
 | --- | --- |
-| Owner | Everything in the workspace, including plan changes |
+| Owner | Everything in the workspace, including plan changes. Cannot approve a deliverable |
 | Admin | Run the workspace and the reminder job. Cannot change the plan |
 | Manager | Clients, projects, tasks, deliverables, and invoices. Cannot run jobs or change the plan |
 | Employee | View projects, move tasks, upload deliverable versions, comment |

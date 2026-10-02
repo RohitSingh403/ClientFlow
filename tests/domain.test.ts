@@ -29,6 +29,8 @@ test("admin cannot change the plan and a client can approve", () => {
   assert.equal(can("ADMIN", "jobs:run"), true);
   assert.equal(can("MANAGER", "jobs:run"), false);
   assert.equal(can("CLIENT", "deliverable:approve"), true);
+  assert.equal(can("OWNER", "deliverable:approve"), false);
+  assert.equal(can("MANAGER", "deliverable:approve"), false);
   assert.equal(can("EMPLOYEE", "deliverable:approve"), false);
 });
 

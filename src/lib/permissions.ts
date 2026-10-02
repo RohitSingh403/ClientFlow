@@ -13,7 +13,6 @@ const STAFF = [
   "deliverable:view",
   "deliverable:create",
   "deliverable:comment",
-  "deliverable:approve",
   "invoice:view",
   "invoice:create",
   "invoice:send",
@@ -59,6 +58,8 @@ export function asRole(value: string): Role | null {
 }
 
 export function can(role: string, permission: string) {
+  // Approval is the client's action. The owner wildcard does not cover it.
+  if (permission === "deliverable:approve") return role === "CLIENT";
   const list = ROLE_PERMISSIONS[role as Role];
   if (!list) return false;
   return list.includes("*") || list.includes(permission);
